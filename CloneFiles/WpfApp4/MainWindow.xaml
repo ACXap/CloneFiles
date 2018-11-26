@@ -1,0 +1,594 @@
+﻿<Window
+    x:Class="CloneFile.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cmd="http://www.galasoft.ch/mvvmlight"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:CloneFile"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="CloneFile"
+    Width="1200"
+    Height="600"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <Window.Resources>
+        <local:ConvertStringToImage x:Key="ConvertStringToImage" />
+        <local:ConvertSizeToString x:Key="ConvertSizeToString" />
+    </Window.Resources>
+    <Window.DataContext>
+        <local:MainWindowViewModel />
+    </Window.DataContext>
+    <Grid>
+        <TabControl>
+            <TabItem Header="Файлы">
+                <i:Interaction.Triggers>
+                    <!--<i:EventTrigger EventName="PreviewDragEnter">
+                        <cmd:EventToCommand Command="{Binding CommandDragEnter}" PassEventArgsToCommand="True" />
+                    </i:EventTrigger>-->
+                    <i:EventTrigger EventName="PreviewDrop">
+                        <cmd:EventToCommand Command="{Binding CommandDrop}" PassEventArgsToCommand="True" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox
+                            Grid.Column="1"
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Content="Группировать по папкам"
+                            IsChecked="{Binding IsGroupPath}" />
+                        <StackPanel Grid.Column="2">
+                            <TextBlock>
+                                <Run Text="Файлов: " />
+                                <Run Text="{Binding CollectionFiles.Count, Mode=OneWay, FallbackValue=0, TargetNullValue=0}" />
+                            </TextBlock>
+                            <TextBlock>
+                                <Run Text="Папок: " />
+                                <Run Text="{Binding CountFolder, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <Button
+                            Grid.Column="0"
+                            Margin="5"
+                            Command="{Binding CommandClearCollectionFiles}"
+                            Content="Очистить список" />
+                    </Grid>
+                    <DataGrid
+                        Grid.Row="1"
+                        Grid.RowSpan="2"
+                        AllowDrop="True"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        ItemsSource="{Binding CollectionViewMyFiles, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                        SelectionMode="Single"
+                        SelectionUnit="FullRow">
+                        <DataGrid.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Path=Name}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                                <GroupStyle.ContainerStyle>
+                                    <Style TargetType="{x:Type GroupItem}">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                    <Expander>
+                                                        <Expander.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock FontWeight="Bold" Text="Папка: " />
+                                                                <TextBlock Text="{Binding Path=Name}" />
+                                                                <TextBlock FontWeight="Bold" Text=" Файлов: " />
+                                                                <TextBlock Text="{Binding Path=ItemCount}" />
+                                                            </StackPanel>
+                                                        </Expander.Header>
+                                                        <ItemsPresenter />
+                                                    </Expander>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </GroupStyle.ContainerStyle>
+                            </GroupStyle>
+                        </DataGrid.GroupStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn
+                                Binding="{Binding Name}"
+                                Header="Имя файла"
+                                IsReadOnly="True" />
+                            <DataGridTextColumn
+                                Binding="{Binding Path}"
+                                Header="Путь к файлу"
+                                IsReadOnly="True" />
+                            <DataGridTextColumn Binding="{Binding Size, Converter={StaticResource ConvertSizeToString}}" Header="Размер" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="2">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            AllowDrop="True"
+                            FontSize="24"
+                            FontWeight="Bold"
+                            Text="Перетащить сюда файлы и папки">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Opacity" Value="0.5" />
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CollectionFiles.Count, Mode=OneWay}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CollectionFiles.Count, Mode=OneWay}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Дубликаты">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="1" Orientation="Vertical">
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="5,0"
+                                VerticalAlignment="Center">
+                                <Run Text="Статус анализа: " />
+                                <Run Text="{Binding State}" />
+                            </TextBlock>
+                            <TextBlock
+                                Grid.Column="2"
+                                Margin="5,0"
+                                VerticalAlignment="Center">
+                                <Run Text="Обнаружено дублирующихся файлов: " />
+                                <Run Text="{Binding CountClone}" />
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <Button
+                                    Width="15"
+                                    Margin="2"
+                                    Command="{Binding CommandOpenCloseExpander}"
+                                    CommandParameter="10"
+                                    IsTabStop="False"
+                                    ToolTip="Развернуть все группы">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M1,1.5L4.5,5 8,1.5"
+                                        SnapsToDevicePixels="False"
+                                        Stroke="#FF666666"
+                                        StrokeThickness="2" />
+                                </Button>
+                                <Button
+                                    Margin="2"
+                                    Command="{Binding CommandOpenCloseExpander}"
+                                    CommandParameter="00"
+                                    IsTabStop="False"
+                                    ToolTip="Свернуть все группы">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M1,4.5L4.5,1 8,4.5"
+                                        SnapsToDevicePixels="False"
+                                        Stroke="#FF666666"
+                                        StrokeThickness="2" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock
+                            Grid.Column="4"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Text="После выполнения анализа, будут выведены сгруппированные файлы дубликаты"
+                            TextTrimming="CharacterEllipsis" />
+                        <Button
+                            Grid.Column="0"
+                            Margin="5"
+                            Command="{Binding CommandAnalyzeCheckSum}"
+                            Content="Анализировать"
+                            TabIndex="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="IsEnabled" Value="True" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOpenPopUp}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <DataGrid
+                            Name="dg"
+                            AllowDrop="True"
+                            AutoGenerateColumns="False"
+                            IsReadOnly="True"
+                            ItemsSource="{Binding CollectionViewMyFilesClone, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                            SelectedItem="{Binding CurrentFile}"
+                            SelectionMode="Single"
+                            SelectionUnit="FullRow">
+                            <DataGrid.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Path=Name}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GroupStyle.HeaderTemplate>
+                                    <GroupStyle.ContainerStyle>
+                                        <Style TargetType="{x:Type GroupItem}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                        <Expander IsExpanded="True">
+                                                            <Expander.Header>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock FontWeight="Bold" Text="Имя файла: " />
+                                                                    <TextBlock Text="{Binding Path=Name}" />
+                                                                    <TextBlock FontWeight="Bold" Text=" Файлов: " />
+                                                                    <TextBlock Text="{Binding Path=ItemCount}" />
+                                                                </StackPanel>
+                                                            </Expander.Header>
+                                                            <ItemsPresenter />
+                                                        </Expander>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=ItemCount}" Value="1">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </GroupStyle.ContainerStyle>
+                                </GroupStyle>
+                            </DataGrid.GroupStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Имя файла" />
+                                <DataGridTextColumn Binding="{Binding Path}" Header="Путь к файлу" />
+                                <DataGridTextColumn Binding="{Binding Size, Converter={StaticResource ConvertSizeToString}}" Header="Размер (байт)" />
+                                <DataGridTextColumn Binding="{Binding CheckSum}" Header="MD5" />
+                            </DataGrid.Columns>
+                            <DataGrid.Resources>
+                                <ContextMenu x:Key="cm">
+                                    <ContextMenu.Items>
+                                        <MenuItem Command="{Binding DataContext.CommandOpenFile, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Открыть файл" />
+                                        <MenuItem Command="{Binding DataContext.CommandOpenFolder, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Открыть папку" />
+                                        <Separator />
+                                        <MenuItem Command="{Binding DataContext.CommandDelFileOfCollection, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Удалить из списка" />
+                                        <Separator />
+                                        <MenuItem Command="{Binding DataContext.CommandDelFile, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Удалить файл" />
+                                    </ContextMenu.Items>
+                                </ContextMenu>
+                            </DataGrid.Resources>
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="ContextMenu" Value="{StaticResource cm}" />
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.InputBindings>
+                                <MouseBinding Command="{Binding CommandOpenFile}" MouseAction="LeftDoubleClick" />
+                            </DataGrid.InputBindings>
+                        </DataGrid>
+                        <Border
+                            Grid.Column="1"
+                            Width="400"
+                            Margin="5,0"
+                            BorderBrush="#FF4949FF"
+                            BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentImage}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Margin="5,5" Orientation="Vertical">
+                                    <TextBlock>
+                                        <Run FontWeight="Bold" Text="Имя файла: " />
+                                        <Run Text="{Binding CurrentFile.Name}" />
+                                    </TextBlock>
+                                    <TextBlock>
+                                        <Run FontWeight="Bold" Text="Папка: " />
+                                        <Run Text="{Binding CurrentFile.Path}" />
+                                    </TextBlock>
+                                    <TextBlock>
+                                        <Run FontWeight="Bold" Text="Размер: " />
+                                        <Run Text="{Binding CurrentFile.Size, Converter={StaticResource ConvertSizeToString}}" />
+                                    </TextBlock>
+                                </StackPanel>
+                                <Image MaxHeight="400" Source="{Binding CurrentImage, Converter={StaticResource ConvertStringToImage}}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Модификации">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="1" Orientation="Vertical">
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="5,0"
+                                VerticalAlignment="Center">
+                                <Run Text="Статус анализа: " />
+                                <Run Text="{Binding State}" />
+                            </TextBlock>
+                            <TextBlock
+                                Grid.Column="2"
+                                Margin="5,0"
+                                VerticalAlignment="Center">
+                                <Run Text="Обнаружено возможных модификаций файлов: " />
+                                <Run Text="{Binding CountModification}" />
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <Button
+                                    Width="15"
+                                    Margin="2"
+                                    Command="{Binding CommandOpenCloseExpander}"
+                                    CommandParameter="11"
+                                    IsTabStop="False"
+                                    ToolTip="Развернуть все группы">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M1,1.5L4.5,5 8,1.5"
+                                        SnapsToDevicePixels="False"
+                                        Stroke="#FF666666"
+                                        StrokeThickness="2" />
+                                </Button>
+                                <Button
+                                    Margin="2"
+                                    Command="{Binding CommandOpenCloseExpander}"
+                                    CommandParameter="01"
+                                    IsTabStop="False"
+                                    ToolTip="Свернуть все группы">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M1,4.5L4.5,1 8,4.5"
+                                        SnapsToDevicePixels="False"
+                                        Stroke="#FF666666"
+                                        StrokeThickness="2" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock
+                            Grid.Column="4"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Text="После выполнения анализа, будут выведены сгруппированные файлы возможных модификаций"
+                            TextTrimming="CharacterEllipsis" />
+                        <Button
+                            Grid.Column="0"
+                            Margin="5"
+                            Command="{Binding CommandAnalyzeModification}"
+                            Content="Анализировать"
+                            TabIndex="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="IsEnabled" Value="True" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOpenPopUp}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                    <DataGrid
+                        Name="dg2"
+                        Grid.Row="1"
+                        AllowDrop="True"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding CollectionViewMyFilesModification, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                        SelectedItem="{Binding CurrentFile}"
+                        SelectionMode="Single"
+                        SelectionUnit="FullRow">
+                        <DataGrid.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Path=Name}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                                <GroupStyle.ContainerStyle>
+                                    <Style TargetType="{x:Type GroupItem}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                    <Expander IsExpanded="True">
+                                                        <Expander.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock FontWeight="Bold" Text="Контрольная сумма: " />
+                                                                <TextBlock Text="{Binding Path=Name}" />
+                                                                <TextBlock FontWeight="Bold" Text=" Файлов: " />
+                                                                <TextBlock Text="{Binding Path=ItemCount}" />
+                                                            </StackPanel>
+                                                        </Expander.Header>
+                                                        <ItemsPresenter />
+                                                    </Expander>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=ItemCount}" Value="1">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </GroupStyle.ContainerStyle>
+                            </GroupStyle>
+                        </DataGrid.GroupStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Name}" Header="Имя файла" />
+                            <DataGridTextColumn Binding="{Binding Path}" Header="Путь к файлу" />
+                            <DataGridTextColumn Binding="{Binding Size, Converter={StaticResource ConvertSizeToString}}" Header="Размер (байт)" />
+                            <!--<DataGridTextColumn Binding="{Binding CheckSum}" Header="MD5" />-->
+                            <DataGridTextColumn Binding="{Binding CreationTime, StringFormat=\{0:dd.MM.yy HH:mm:ss\}}" Header="Дата создания" />
+                            <DataGridTextColumn Binding="{Binding LastWriteTime, StringFormat=\{0:dd.MM.yy HH:mm:ss\}}" Header="Дата записи" />
+                            <DataGridTextColumn Binding="{Binding LastAccessTime, StringFormat=\{0:dd.MM.yy HH:mm:ss\}}" Header="Дата открытия" />
+                        </DataGrid.Columns>
+                        <DataGrid.Resources>
+                            <ContextMenu x:Key="cm">
+                                <ContextMenu.Items>
+                                    <MenuItem Command="{Binding DataContext.CommandOpenFile, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Открыть файл" />
+                                    <MenuItem Command="{Binding DataContext.CommandOpenFolder, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Открыть папку" />
+                                    <Separator />
+                                    <MenuItem Command="{Binding DataContext.CommandDelFileOfCollection, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Удалить из списка" />
+                                    <Separator />
+                                    <MenuItem Command="{Binding DataContext.CommandDelFile, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" Header="Удалить файл" />
+                                </ContextMenu.Items>
+                            </ContextMenu>
+                        </DataGrid.Resources>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="ContextMenu" Value="{StaticResource cm}" />
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.InputBindings>
+                            <MouseBinding Command="{Binding CommandOpenFile}" MouseAction="LeftDoubleClick" />
+                        </DataGrid.InputBindings>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Border
+            Width="800"
+            Height="200"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsOpenPopUp}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid Background="Red">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Text="Идет анализ файлов. Подождите!" />
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="2*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                FontWeight="Bold"
+                                Text="{Binding State}" />
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                FontWeight="Bold">
+                                <Run Text="{Binding CountFile}" />
+                                <Run Text=" / " />
+                                <Run Text="{Binding CollectionFiles.Count, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <ProgressBar
+                            Grid.Row="1"
+                            Margin="10"
+                            IsIndeterminate="True" />
+                    </Grid>
+                    <Button
+                        Grid.Column="1"
+                        Width="160"
+                        Height="80"
+                        Margin="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Command="{Binding CommandStopAnalize}"
+                        Content="Стоп"
+                        FontSize="20"
+                        FontWeight="Bold" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
